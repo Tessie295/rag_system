@@ -3,7 +3,9 @@ import time
 import logging
 import re
 import markdown
-from typing import List, Dict, Any
+import functools
+import asyncio
+from typing import List, Dict, Any, Callable, Awaitable, TypeVar, Union, Tuple
 import frontmatter
 from bs4 import BeautifulSoup
 
@@ -14,15 +16,31 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def time_function(func):
-    """Decorator to measure the execution time of a function."""
-    def wrapper(*args, **kwargs):
+T = TypeVar('T')
+
+def time_function(func: Callable) -> Callable:
+    """Decorator to measure the execution time of a function.
+    Works with both synchronous and asynchronous functions."""
+    @functools.wraps(func)
+    async def async_wrapper(*args, **kwargs) -> Tuple[T, float]:
+        start_time = time.time()
+        result = await func(*args, **kwargs)
+        execution_time = time.time() - start_time
+        logger.info(f"Function {func.__name__} executed in {execution_time:.4f} seconds")
+        return result, execution_time
+
+    @functools.wraps(func)
+    def sync_wrapper(*args, **kwargs) -> Tuple[T, float]:
         start_time = time.time()
         result = func(*args, **kwargs)
         execution_time = time.time() - start_time
         logger.info(f"Function {func.__name__} executed in {execution_time:.4f} seconds")
         return result, execution_time
-    return wrapper
+
+    if asyncio.iscoroutinefunction(func):
+        return async_wrapper
+    else:
+        return sync_wrapper
 
 def load_markdown_file(file_path: str) -> Dict[str, Any]:
     """Load and parse a markdown file with frontmatter."""

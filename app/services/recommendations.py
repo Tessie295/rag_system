@@ -45,7 +45,7 @@ class RecommendationService:
     
     async def _load_user_profiles(self):
         """Load user profiles from file if it exists."""
-        users_file = os.path.join("app/data", "users.json")
+        users_file = os.path.join("app/data", "users_app.json")
         if os.path.exists(users_file):
             try:
                 with open(users_file, 'r') as f:
@@ -60,7 +60,7 @@ class RecommendationService:
     
     async def _save_user_profiles(self):
         """Save user profiles to file."""
-        users_file = os.path.join("app/data", "users.json")
+        users_file = os.path.join("app/data", "users_app.json")
         try:
             with open(users_file, 'w') as f:
                 users_data = [user.dict() for user in self.users.values()]

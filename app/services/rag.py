@@ -95,7 +95,7 @@ class RAGService:
         logger.info("RAG service initialized successfully")
     
     @time_function
-    async def process_query(self, query: str) -> Tuple[RAGResponse, float]:
+    async def process_query(self, query: str) -> RAGResponse:
         """Process a user query and generate a response with sources."""
         if not self.initialized:
             await self.initialize()
@@ -122,6 +122,9 @@ class RAGService:
                 relevance_score=relevance_score
             ))
         
+        logger.debug(f"Query: {query}, Relevance scores: {relevance_scores}, Threshold: {settings.SIMILARITY_THRESHOLD}")
+        logger.debug(f"Out of scope result: {is_out_of_scope(query, settings.SIMILARITY_THRESHOLD, relevance_scores)}")
+        
         # Check if query is out of scope
         if is_out_of_scope(query, settings.SIMILARITY_THRESHOLD, relevance_scores):
             answer = "I'm sorry, I don't have enough information to answer this question. This topic may be outside the scope of my knowledge about Shakers."
@@ -134,7 +137,11 @@ class RAGService:
             query=query,
             answer=answer,
             sources=sources,
-            processing_time=0.0  # Will be updated with the actual time
+            processing_time=0.0  # Will be updated by the time_function decorator
         )
         
         return response
+    
+
+
+    

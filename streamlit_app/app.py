@@ -5,6 +5,7 @@ import time
 import pandas as pd
 import altair as alt
 from datetime import datetime
+import json
 
 # Constants
 API_URL = "http://localhost:8000/api"
@@ -85,33 +86,34 @@ with chat_container:
 # User input
 query = st.text_input("Ask a question about Shakers", key="user_query")
 
-if st.button("Submit") or query:
-    if query:
-        # Add user message to chat history
-        st.session_state.chat_history.append({
-            "role": "user",
-            "content": query,
-            "timestamp": datetime.now().isoformat()
-        })
-        
-        # Increment query count
-        st.session_state.query_count += 1
-        
-        # Show spinner during API call
-        with st.spinner("Thinking..."):
-            try:
-                # Send query to API
-                start_time = time.time()
-                response = requests.post(
-                    f"{API_URL}/query",
-                    json={"query": query, "user_id": st.session_state.user_id}
-                )
-                response_time = time.time() - start_time
-                
-                # Add response time to history
-                st.session_state.response_times.append(response_time)
-                
-                if response.status_code == 200:
+if st.button("Submit") and query:
+    # Add user message to chat history
+    st.session_state.chat_history.append({
+        "role": "user",
+        "content": query,
+        "timestamp": datetime.now().isoformat()
+    })
+    
+    # Increment query count
+    st.session_state.query_count += 1
+    
+    # Show spinner during API call
+    with st.spinner("Thinking..."):
+        try:
+            # Send query to API
+            start_time = time.time()
+            response = requests.post(
+                f"{API_URL}/query",
+                json={"query": query, "user_id": st.session_state.user_id},
+                timeout=30  # Add timeout
+            )
+            response_time = time.time() - start_time
+            
+            # Add response time to history
+            st.session_state.response_times.append(response_time)
+            
+            if response.status_code == 200:
+                try:
                     data = response.json()
                     
                     # Add AI response to chat history
@@ -123,10 +125,14 @@ if st.button("Submit") or query:
                         "timestamp": datetime.now().isoformat(),
                         "processing_time": data["processing_time"]
                     })
-                else:
-                    st.error(f"Error: {response.status_code} - {response.text}")
-            except Exception as e:
-                st.error(f"Error connecting to API: {str(e)}")
-        
-        # Clear the input box and refresh the page to show new messages
-        st.experimental_rerun()
+                except json.JSONDecodeError as e:
+                    st.error(f"Error parsing response: {e}")
+                    st.error(f"Response content: {response.text[:500]}...")
+            else:
+                st.error(f"Error: {response.status_code} - {response.text}")
+        except requests.exceptions.RequestException as e:
+            st.error(f"Error connecting to API: {str(e)}")
+            st.error("Make sure the API server is running at http://localhost:8000")
+    
+    # Clear the input box and refresh the page to show new messages
+    st.rerun()

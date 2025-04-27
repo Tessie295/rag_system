@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     
     # RAG settings
     MAX_SOURCES: int = int(os.getenv("MAX_SOURCES", "3"))
-    SIMILARITY_THRESHOLD: float = float(os.getenv("SIMILARITY_THRESHOLD", "0.7"))
+    SIMILARITY_THRESHOLD: float = float(os.getenv("SIMILARITY_THRESHOLD", "0.5"))
     
     # Recommendation settings
     MAX_RECOMMENDATIONS: int = int(os.getenv("MAX_RECOMMENDATIONS", "3"))
