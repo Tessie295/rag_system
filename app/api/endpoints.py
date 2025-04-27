@@ -10,7 +10,7 @@ router = APIRouter()
 
 # Create service instances
 rag_service = RAGService()
-recommendation_service = RecommendationService()
+recommendation_service = RecommendationService()  # Fixed: proper initialization
 
 async def get_rag_service() -> RAGService:
     """Dependency to get the RAG service."""
@@ -35,9 +35,13 @@ async def process_query(
         # Process query with RAG
         rag_response, processing_time = await rag_service.process_query(request.query)
         
-        # Add query to user history
-        await recommendation_service.add_query_to_user_history(request.user_id, request.query)
-        
+        # Save the chat message with both user query and assistant response
+        await recommendation_service.add_chat_to_user_history(
+            user_id=request.user_id,
+            user_message=request.query,
+            assistant_message=rag_response.answer
+        )
+
         # Generate recommendations
         recommendations = await recommendation_service.generate_recommendations(
             request.user_id, request.query

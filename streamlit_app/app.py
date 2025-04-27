@@ -6,6 +6,7 @@ import pandas as pd
 import altair as alt
 from datetime import datetime
 import json
+import traceback
 
 # Constants
 API_URL = "http://localhost:8000/api"
@@ -36,6 +37,16 @@ with st.sidebar:
     st.header("Settings")
     user_id = st.text_input("User ID", value=st.session_state.user_id)
     st.session_state.user_id = user_id
+    
+    # Add a health check indicator
+    try:
+        health_response = requests.get(f"{API_URL}/health", timeout=2)
+        if health_response.status_code == 200:
+            st.success("API Status: Online")
+        else:
+            st.error(f"API Status: Error ({health_response.status_code})")
+    except:
+        st.error("API Status: Offline - Check if API server is running")
     
     st.header("Metrics")
     
@@ -68,25 +79,57 @@ chat_container = st.container()
 with chat_container:
     for message in st.session_state.chat_history:
         if message["role"] == "user":
-            st.write(f"You: {message['content']}")
+            st.chat_message("user").write(f"{message['content']}")
         else:
-            st.write(f"AI: {message['content']}")
+            st.chat_message("assistant").write(f"{message['content']}")
             
-            if "sources" in message:
+            if "sources" in message and message["sources"]:
                 with st.expander("Sources"):
                     for source in message["sources"]:
                         st.write(f"📄 **{source['title']}** (Relevance: {source['relevance_score']:.2f})")
             
-            if "recommendations" in message:
+            if "recommendations" in message and message["recommendations"]:
                 with st.expander("Recommended for you"):
                     for rec in message["recommendations"]:
                         st.write(f"📚 **{rec['title']}**")
                         st.write(f"_{rec['explanation']}_")
 
 # User input
-query = st.text_input("Ask a question about Shakers", key="user_query")
+query = st.chat_input("Ask a question about Shakers")
 
-if st.button("Submit") and query:
+def make_api_request(query_text):
+    """Make an API request with error handling"""
+    try:
+        response = requests.post(
+            f"{API_URL}/query",
+            json={"query": query_text, "user_id": st.session_state.user_id},
+            timeout=30
+        )
+        response.raise_for_status()  # Raise exception for 4XX/5XX responses
+        return response.json()
+    except requests.exceptions.HTTPError as e:
+        st.error(f"HTTP Error: {e}")
+        try:
+            error_data = response.json()
+            st.error(f"API Error: {error_data.get('detail', 'Unknown error')}")
+        except:
+            st.error(f"API Response: {response.text[:300]}...")
+    except requests.exceptions.ConnectionError:
+        st.error("Connection Error: Could not connect to the API server")
+        st.info("Make sure the API server is running at http://localhost:8000")
+    except requests.exceptions.Timeout:
+        st.error("Timeout Error: The API request timed out")
+    except requests.exceptions.RequestException as e:
+        st.error(f"Request Error: {e}")
+    except json.JSONDecodeError:
+        st.error("Error parsing API response as JSON")
+        st.code(response.text[:300] + "...")
+    except Exception as e:
+        st.error(f"Unexpected error: {e}")
+        st.error(traceback.format_exc())
+    return None
+
+if query:
     # Add user message to chat history
     st.session_state.chat_history.append({
         "role": "user",
@@ -94,45 +137,53 @@ if st.button("Submit") and query:
         "timestamp": datetime.now().isoformat()
     })
     
+    # Display the user message immediately
+    st.chat_message("user").write(query)
+    
     # Increment query count
     st.session_state.query_count += 1
     
     # Show spinner during API call
     with st.spinner("Thinking..."):
-        try:
-            # Send query to API
-            start_time = time.time()
-            response = requests.post(
-                f"{API_URL}/query",
-                json={"query": query, "user_id": st.session_state.user_id},
-                timeout=30  # Add timeout
-            )
-            response_time = time.time() - start_time
+        start_time = time.time()
+        result = make_api_request(query)
+        response_time = time.time() - start_time
+        
+        # Add response time to history
+        st.session_state.response_times.append(response_time)
+        
+        if result:
+            # Add AI response to chat history
+            assistant_message = {
+                "role": "assistant",
+                "content": result["answer"],
+                "timestamp": datetime.now().isoformat(),
+                "processing_time": result.get("processing_time", response_time)
+            }
             
-            # Add response time to history
-            st.session_state.response_times.append(response_time)
+            # Add sources if available
+            if "sources" in result and result["sources"]:
+                assistant_message["sources"] = result["sources"]
             
-            if response.status_code == 200:
-                try:
-                    data = response.json()
-                    
-                    # Add AI response to chat history
-                    st.session_state.chat_history.append({
-                        "role": "assistant",
-                        "content": data["answer"],
-                        "sources": data["sources"],
-                        "recommendations": data["recommendations"],
-                        "timestamp": datetime.now().isoformat(),
-                        "processing_time": data["processing_time"]
-                    })
-                except json.JSONDecodeError as e:
-                    st.error(f"Error parsing response: {e}")
-                    st.error(f"Response content: {response.text[:500]}...")
-            else:
-                st.error(f"Error: {response.status_code} - {response.text}")
-        except requests.exceptions.RequestException as e:
-            st.error(f"Error connecting to API: {str(e)}")
-            st.error("Make sure the API server is running at http://localhost:8000")
-    
-    # Clear the input box and refresh the page to show new messages
-    st.rerun()
+            # Add recommendations if available
+            if "recommendations" in result and result["recommendations"]:
+                assistant_message["recommendations"] = result["recommendations"]
+                
+            st.session_state.chat_history.append(assistant_message)
+            
+            # Display the assistant message
+            assistant_response = st.chat_message("assistant")
+            assistant_response.write(result["answer"])
+            
+            # Show sources if available
+            if "sources" in result and result["sources"]:
+                with assistant_response.expander("Sources"):
+                    for source in result["sources"]:
+                        st.write(f"📄 **{source['title']}** (Relevance: {source['relevance_score']:.2f})")
+            
+            # Show recommendations if available
+            if "recommendations" in result and result["recommendations"]:
+                with assistant_response.expander("Recommended for you"):
+                    for rec in result["recommendations"]:
+                        st.write(f"📚 **{rec['title']}**")
+                        st.write(f"_{rec['explanation']}_")

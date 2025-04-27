@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 import os
 from typing import List, Dict, Any, Optional
@@ -8,6 +9,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from app.config import settings
 from app.models.schemas import UserProfile, Query, Document, Recommendation
+from app.models.schemas import ChatMessage
 from app.utils.helpers import logger
 
 class RecommendationService:
@@ -30,16 +32,9 @@ class RecommendationService:
             return
         
         self.documents = documents
-        
-        # Extract document content for TF-IDF vectorization
         document_contents = [doc.content for doc in documents]
-        
-        # Fit the vectorizer and transform documents
         self.document_vectors = self.tfidf_vectorizer.fit_transform(document_contents)
-        
-        # Load existing user profiles if any
         await self._load_user_profiles()
-        
         self.initialized = True
         logger.info("Recommendation service initialized successfully")
     
@@ -69,12 +64,26 @@ class RecommendationService:
         except Exception as e:
             logger.error(f"Error saving user profiles: {e}")
     
-    async def add_query_to_user_history(self, user_id: str, query: str):
-        """Add a query to the user's history."""
+    # async def add_query_to_user_history(self, user_id: str, query: str):
+    #     """Add a query to the user's history."""
+    #     if user_id not in self.users:
+    #         self.users[user_id] = UserProfile(user_id=user_id)
+        
+    #     self.users[user_id].queries.append(Query(text=query, user_id=user_id))
+    #     await self._save_user_profiles()
+    
+    async def add_chat_to_user_history(self, user_id: str, user_message: str, assistant_message: str):
+        """Add a chat (user and assistant message) to the user's history."""
         if user_id not in self.users:
             self.users[user_id] = UserProfile(user_id=user_id)
         
-        self.users[user_id].queries.append(Query(text=query, user_id=user_id))
+        self.users[user_id].chat_history.append(
+            ChatMessage(
+                user_message=user_message,
+                assistant_message=assistant_message,
+                timestamp=datetime.now()
+            )
+        )
         
         # Save updated user profiles
         await self._save_user_profiles()
@@ -86,8 +95,6 @@ class RecommendationService:
         
         if document_id not in self.users[user_id].viewed_documents:
             self.users[user_id].viewed_documents.append(document_id)
-            
-            # Save updated user profiles
             await self._save_user_profiles()
     
     async def generate_recommendations(self, user_id: str, current_query: str) -> List[Recommendation]:
@@ -96,34 +103,25 @@ class RecommendationService:
             logger.error("Recommendation service not initialized")
             return []
         
-        # Get user profile or create new one
         user_profile = self.users.get(user_id, UserProfile(user_id=user_id))
         
-        # Extract user's query history
-        query_history = [q.text for q in user_profile.queries]
+        # Extract user queries from chat history instead of using the queries array
+        query_history = [chat.user_message for chat in user_profile.chat_history]
         all_queries = query_history + [current_query]
         
-        # If user is new with no history, just use current query
         if not query_history:
             query_text = current_query
         else:
-            # Concatenate all queries with more weight to recent ones
             query_text = " ".join(all_queries[-3:] * 2 + all_queries)
         
-        # Vectorize the query
+        # Rest of the method remains the same
         query_vector = self.tfidf_vectorizer.transform([query_text])
-        
-        # Calculate similarity with all documents
         similarities = cosine_similarity(query_vector, self.document_vectors).flatten()
-        
-        # Get viewed document IDs
         viewed_documents = set(user_profile.viewed_documents)
         
-        # Create list of (document_index, similarity) tuples and sort by similarity
         document_similarities = [(i, sim) for i, sim in enumerate(similarities)]
         document_similarities.sort(key=lambda x: x[1], reverse=True)
         
-        # Filter out already viewed documents and select top recommendations
         recommendations = []
         for doc_idx, similarity in document_similarities:
             if len(recommendations) >= settings.MAX_RECOMMENDATIONS:
@@ -131,9 +129,7 @@ class RecommendationService:
                 
             doc = self.documents[doc_idx]
             if doc.id not in viewed_documents:
-                # Generate explanation for the recommendation
                 explanation = self._generate_explanation(doc, current_query, similarity)
-                
                 recommendations.append(
                     Recommendation(
                         document_id=doc.id,
@@ -149,7 +145,7 @@ class RecommendationService:
     def _generate_explanation(self, document: Document, query: str, similarity: float) -> str:
         """Generate an explanation for why a document is being recommended."""
         if similarity > 0.8:
-            return f"Highly relevant to your current question about {query.split()[:3]}..."
+            return f"Highly relevant to your current question about {' '.join(query.split()[:3])}..."
         elif similarity > 0.6:
             return f"Related to topics you've been exploring in Shakers"
         else:

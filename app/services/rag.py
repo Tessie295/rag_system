@@ -122,11 +122,11 @@ class RAGService:
                 relevance_score=relevance_score
             ))
         
-        logger.debug(f"Query: {query}, Relevance scores: {relevance_scores}, Threshold: {settings.SIMILARITY_THRESHOLD}")
-        logger.debug(f"Out of scope result: {is_out_of_scope(query, settings.SIMILARITY_THRESHOLD, relevance_scores)}")
-        
+            
         # Check if query is out of scope
         if is_out_of_scope(query, settings.SIMILARITY_THRESHOLD, relevance_scores):
+            logger.debug(f"Query: {query}, Relevance scores: {relevance_scores}, Threshold: {settings.SIMILARITY_THRESHOLD}")
+            logger.debug(f"Out of scope result: {is_out_of_scope(query, settings.SIMILARITY_THRESHOLD, relevance_scores)}")
             answer = "I'm sorry, I don't have enough information to answer this question. This topic may be outside the scope of my knowledge about Shakers."
         else:
             # Generate answer using the RAG chain

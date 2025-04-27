@@ -38,11 +38,15 @@ class Recommendation(BaseModel):
     explanation: str
     relevance_score: float
 
+class ChatMessage(BaseModel):
+    user_message: str
+    assistant_message: str
+    timestamp: Optional[datetime] = None
+
 class UserProfile(BaseModel):
-    """User profile with query history."""
     user_id: str
-    queries: List[Query] = []
-    viewed_documents: List[str] = []  # List of document IDs
+    viewed_documents: List[str] = [] # List of document IDs
+    chat_history: List[ChatMessage] = []
 
 class QueryRequest(BaseModel):
     """Query request from the API."""
