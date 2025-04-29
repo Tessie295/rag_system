@@ -4,6 +4,7 @@ pydantic
 pydantic-settings
 python-dotenv
 langchain
+langdetect
 openai
 tiktoken
 faiss-cpu
@@ -17,3 +18,5 @@ pandas
 altair
 pytest
 httpx
+pytest-asyncio
+pytest-cov
