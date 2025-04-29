@@ -260,6 +260,12 @@ class RecommendationService:
         
         logger.info(f"Working with {len(self.documents)} documents for recommendations")
         
+        # Check if necessary components are available
+        if self.document_vectors is None or self.document_vectors.shape[0] == 0:
+            logger.warning("Document vectors not available - cannot generate personalized recommendations")
+            # Provide fallback recommendations
+            return self._generate_fallback_recommendations(user_id)
+        
         try:
             # Vectorize current query
             query_vector = self.tfidf_vectorizer.transform([current_query])
@@ -330,7 +336,10 @@ class RecommendationService:
                     continue
                 
                 # Get cluster for this document
-                doc_cluster = self.document_clusters[doc_idx] if hasattr(self, 'document_clusters') and len(self.document_clusters) > doc_idx else None
+                doc_cluster = None
+                if hasattr(self, 'document_clusters') and self.document_clusters is not None:
+                    if len(self.document_clusters) > doc_idx:
+                        doc_cluster = self.document_clusters[doc_idx]
                 
                 # Promote diversity by limiting docs from same cluster, but only if we have sufficient clusters
                 if doc_cluster is not None and doc_cluster in selected_clusters and len(selected_clusters) < 3:
@@ -341,37 +350,26 @@ class RecommendationService:
                     selected_clusters.add(doc_cluster)
                     
                 # Lower the threshold for including recommendations
-                # Original threshold might have been too high
-                if similarity > 0.1:  # Lower threshold to ensure we get recommendations
+                if similarity > 0.05:  
                     explanation = self._generate_enhanced_explanation(doc, current_query, similarity, user_profile)
                     
-                    recommendations.append(
-                        Recommendation(
-                            document_id=doc.id,
-                            title=doc.title,
-                            path=doc.path,
-                            explanation=explanation,
-                            relevance_score=float(similarity)
-                        )
-                    )
+                    # Create a dictionary for Streamlit compatibility
+                    rec_dict = {
+                        "document_id": doc.id,
+                        "title": doc.title,
+                        "path": doc.path,
+                        "explanation": explanation,
+                        "relevance_score": float(similarity),
+                        "tags": doc.tags if hasattr(doc, "tags") else []
+                    }
+                    
+                    recommendations.append(rec_dict)
                     logger.debug(f"Added recommendation: {doc.title} with score {similarity:.2f}")
             
             # If we still don't have recommendations, add some general ones
             if not recommendations and len(self.documents) > 0:
                 logger.info("No specific recommendations found, adding general recommendations")
-                # Add general recommendations based on popularity or relevance
-                for i in range(min(3, len(self.documents))):
-                    doc = self.documents[i]
-                    if doc.id not in viewed_documents:
-                        recommendations.append(
-                            Recommendation(
-                                document_id=doc.id,
-                                title=doc.title,
-                                path=doc.path,
-                                explanation="You might find this content helpful for learning about Shakers",
-                                relevance_score=0.5
-                            )
-                        )
+                return self._generate_fallback_recommendations(user_id)
             
             # Update metrics
             self.recommendation_metrics["total_recommendations"] += len(recommendations)
@@ -382,10 +380,19 @@ class RecommendationService:
             
             # Track relevance scores
             for rec in recommendations:
-                self.recommendation_metrics["relevance_scores"].append(rec.relevance_score)
+                self.recommendation_metrics["relevance_scores"].append(rec["relevance_score"])
             
             # Store recommendations with user
-            user_profile.recent_recommendations = recommendations
+            user_profile.recent_recommendations = [
+                Recommendation(
+                    document_id=rec["document_id"],
+                    title=rec["title"],
+                    path=rec["path"],
+                    explanation=rec["explanation"],
+                    relevance_score=rec["relevance_score"],
+                    tags=rec.get("tags", [])
+                ) for rec in recommendations
+            ]
             await self._save_user_profiles()
             
             # Save metrics
@@ -397,7 +404,68 @@ class RecommendationService:
         except Exception as e:
             logger.error(f"Error generating recommendations: {e}")
             logger.error(traceback.format_exc())
-            return []  # Return empty recommendations on error
+            # Return fallback recommendations on error
+            return self._generate_fallback_recommendations(user_id)
+            
+    def _generate_fallback_recommendations(self, user_id: str) -> List[Dict[str, Any]]:
+        """Generate fallback recommendations when personalized ones cannot be created."""
+        try:
+            fallback_recs = []
+            
+            # Fixed: Access viewed_documents directly from UserProfile object
+            if user_id in self.users:
+                viewed_docs = set(self.users[user_id].viewed_documents)
+            else:
+                # Create user if doesn't exist
+                self.users[user_id] = UserProfile(user_id=user_id)
+                viewed_docs = set()
+            
+            logger.info(f"Generating fallback recommendations for user {user_id} with {len(viewed_docs)} viewed docs")
+            
+            # First try to recommend unviewed documents
+            count = 0
+            for doc in self.documents:
+                if doc.id not in viewed_docs and count < 3:
+                    fallback_recs.append({
+                        "document_id": doc.id,
+                        "title": doc.title,
+                        "path": doc.path,
+                        "explanation": "Recommended resource about Shakers",
+                        "relevance_score": 0.5,
+                        "tags": doc.tags if hasattr(doc, "tags") else []
+                    })
+                    count += 1
+                    logger.info(f"Added fallback recommendation: {doc.title}")
+            
+            # If we couldn't find enough unviewed documents, include some viewed ones
+            # with a different explanation
+            if len(fallback_recs) < 2 and len(self.documents) > 0:
+                logger.info("Not enough unviewed documents, including viewed ones")
+                # Sort documents by some criteria (here we just use the first few)
+                for doc in self.documents:
+                    if count < 3:  # Still limit to 3 total recommendations
+                        # Skip if already added
+                        if any(rec["document_id"] == doc.id for rec in fallback_recs):
+                            continue
+                            
+                        fallback_recs.append({
+                            "document_id": doc.id,
+                            "title": doc.title,
+                            "path": doc.path,
+                            "explanation": "This resource may be worth reviewing again" if doc.id in viewed_docs else "Recommended resource about Shakers",
+                            "relevance_score": 0.4,  # Lower score for viewed documents
+                            "tags": doc.tags if hasattr(doc, "tags") else []
+                        })
+                        count += 1
+                        logger.info(f"Added supplementary recommendation: {doc.title}")
+            
+            logger.info(f"Created {len(fallback_recs)} fallback recommendations")
+            return fallback_recs
+        except Exception as e:
+            logger.error(f"Error creating fallback recommendations: {e}")
+            logger.error(traceback.format_exc())
+            # Return empty list as a last resort
+            return []
 
     def _extract_tech_terms(self, query: str) -> List[str]:
         """Extract technical terms from a query to enhance skill-based searches."""

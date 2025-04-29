@@ -11,6 +11,12 @@ import plotly.express as px
 import plotly.graph_objects as go
 from typing import List, Dict, Any
 
+import logging
+
+# Configure the logger (this is a simple configuration)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # Constants
 API_URL = "http://localhost:8000/api"
 DEFAULT_USER_ID = str(uuid.uuid4())  # Generate unique IDs for new users
@@ -289,45 +295,60 @@ with col1:
 with col2:
     st.header("🔍 Recommended Resources")
     
-    # Display recommendations with improved debugging
+    # Display recommendations with improved error handling
     recommendation_container = st.container(height=500)
     
     with recommendation_container:
-        # Add debug information
+        # Initialize if not present
         if "last_recommendations" not in st.session_state:
             st.session_state.last_recommendations = []
-            
-        st.write(f"Debug: {len(st.session_state.last_recommendations)} recommendations in session state")
+        
+        # Add debug information but remove from production
+        logger.debug(f"Recommendations in state: {len(st.session_state.last_recommendations)}")
         
         if st.session_state.last_recommendations:
-            for rec in st.session_state.last_recommendations:
-                st.markdown(f"<div class='recommendation-card'>", unsafe_allow_html=True)
-                st.markdown(f"**{rec['title']}**")
-                st.markdown(f"<div class='info-text'>{rec['explanation']}</div>", unsafe_allow_html=True)
-                
-                # Add tags if available
-                if 'tags' in rec and rec['tags']:
-                    tags_html = ' '.join([f"<span class='highlight'>{tag}</span>" for tag in rec['tags']])
-                    st.markdown(f"<div style='margin-top: 0.5rem;'>{tags_html}</div>", unsafe_allow_html=True)
-                
-                # Add a button to view the document
-                if st.button(f"View Resource", key=f"rec_{rec['document_id']}"):
-                    if rec['document_id'] not in st.session_state.viewed_documents:
-                        # Call API to mark document as viewed
-                        try:
-                            requests.post(
-                                f"{API_URL}/documents/{rec['document_id']}/view",
-                                json={"user_id": st.session_state.user_id}
-                            )
-                            st.session_state.viewed_documents.add(rec['document_id'])
-                            st.success(f"Marked '{rec['title']}' as viewed")
-                        except:
-                            st.error("Could not update view status")
-                
-                st.markdown("</div>", unsafe_allow_html=True)
+            try:
+                for rec in st.session_state.last_recommendations:
+                    # Safely access recommendation properties with dict.get() method
+                    # This handles both dict-like and object-like access patterns
+                    title = rec.get('title', rec['title'] if isinstance(rec, dict) else getattr(rec, 'title', 'Unknown Title'))
+                    doc_id = rec.get('document_id', rec['document_id'] if isinstance(rec, dict) else getattr(rec, 'document_id', 'unknown'))
+                    explanation = rec.get('explanation', rec['explanation'] if isinstance(rec, dict) else getattr(rec, 'explanation', 'Recommended resource'))
+                    
+                    # Render recommendation card
+                    st.markdown(f"<div class='recommendation-card'>", unsafe_allow_html=True)
+                    st.markdown(f"**{title}**")
+                    st.markdown(f"<div class='info-text'>{explanation}</div>", unsafe_allow_html=True)
+                    
+                    # Safely get tags with error handling
+                    try:
+                        tags = rec.get('tags', rec['tags'] if isinstance(rec, dict) and 'tags' in rec else getattr(rec, 'tags', []))
+                        if tags:
+                            tags_html = ' '.join([f"<span class='highlight'>{tag}</span>" for tag in tags])
+                            st.markdown(f"<div style='margin-top: 0.5rem;'>{tags_html}</div>", unsafe_allow_html=True)
+                    except Exception as e:
+                        logger.error(f"Error displaying tags: {e}")
+                    
+                    # Add view button
+                    if st.button(f"View Resource", key=f"rec_{doc_id}"):
+                        if doc_id not in st.session_state.viewed_documents:
+                            try:
+                                requests.post(
+                                    f"{API_URL}/documents/{doc_id}/view",
+                                    json={"user_id": st.session_state.user_id}
+                                )
+                                st.session_state.viewed_documents.add(doc_id)
+                                st.success(f"Marked '{title}' as viewed")
+                            except Exception as e:
+                                st.error(f"Could not update view status: {str(e)}")
+                    
+                    st.markdown("</div>", unsafe_allow_html=True)
+            except Exception as e:
+                st.error(f"Error displaying recommendations: {str(e)}")
+                logger.error(f"Recommendation display error: {str(e)}")
+                logger.error(f"Recommendation data: {st.session_state.last_recommendations}")
         else:
             st.info("Recommendations will appear based on your questions.\nTry asking about specific skills like 'Angular' or 'Python'.")
-    
 
 def make_api_request(query_text: str) -> Dict[str, Any]:
     """Make an API request with enhanced error handling and retry logic."""
@@ -436,13 +457,12 @@ if query:
             if "recommendations" in result and result["recommendations"]:
                 st.session_state.last_recommendations = result["recommendations"]
                 # Print debug info
-                st.sidebar.write(f"Debug: Found {len(result['recommendations'])} recommendations")
+                logger.info(f"Found {len(result['recommendations'])} recommendations")
             else:
-                st.sidebar.write("Debug: No recommendations in result")
-                # If no recommendations in result, keep the previous ones instead of clearing
-                if not st.session_state.last_recommendations:
-                    st.session_state.last_recommendations = []
-                    
+                logger.info("No recommendations in result")
+                # Don't clear recommendations if none are available
+                # This is the key fix - don't set to empty list which causes loss of previous recommendations
+            
             # Add to chat history
             st.session_state.chat_history.append(assistant_message)
             
