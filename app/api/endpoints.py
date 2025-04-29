@@ -126,11 +126,16 @@ async def process_query(
         if not recommendations and recommendation_service.initialized:
             logger.info("No recommendations generated - creating fallback recommendations")
             try:
-                # Get 2-3 documents that haven't been viewed as fallback recommendations
-                viewed_docs = set(recommendation_service.users.get(request.user_id, {}).get('viewed_documents', []))
+                # Get documents that haven't been viewed as fallback recommendations
+                if request.user_id in recommendation_service.users:
+                    viewed_docs = set(recommendation_service.users[request.user_id].viewed_documents)
+                else:
+                    viewed_docs = set()
                 
                 fallback_recs = []
-                for doc in rag_service.documents[:5]:  # Consider first 5 docs
+                
+                # First try with unviewed documents
+                for doc in rag_service.documents:
                     if doc.id not in viewed_docs and len(fallback_recs) < 3:
                         fallback_recs.append(
                             Recommendation(
@@ -142,10 +147,29 @@ async def process_query(
                             )
                         )
                 
+                # If we don't have enough recommendations, include viewed documents too
+                if len(fallback_recs) < 2 and len(rag_service.documents) > 0:
+                    for doc in rag_service.documents:
+                        # Skip if already added
+                        if any(rec.document_id == doc.id for rec in fallback_recs):
+                            continue
+                            
+                        if len(fallback_recs) < 3:
+                            fallback_recs.append(
+                                Recommendation(
+                                    document_id=doc.id,
+                                    title=doc.title,
+                                    path=doc.path,
+                                    explanation="This resource may be worth reviewing again" if doc.id in viewed_docs else "Recommended resource about Shakers",
+                                    relevance_score=0.4  # Lower score for viewed documents
+                                )
+                            )
+                
                 recommendations = fallback_recs
                 logger.info(f"Created {len(fallback_recs)} fallback recommendations")
             except Exception as e:
                 logger.error(f"Error creating fallback recommendations: {e}")
+                logger.error(traceback.format_exc())
         
         # Create the full response
         response = QueryResponse(
@@ -163,8 +187,7 @@ async def process_query(
         # Log recommendation info
         logger.info(f"Returning {len(recommendations)} recommendations")
         for rec in recommendations:
-            logger.debug(f"Recommendation: {rec.title} (score: {rec.relevance_score:.2f})")
-        
+            logger.debug(f"Recommendation: {rec['title']} (score: {rec['relevance_score']:.2f})")        
         return response
     
     except Exception as e:
