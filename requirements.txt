@@ -20,3 +20,7 @@ pytest
 httpx
 pytest-asyncio
 pytest-cov
+nltk
+matplotlib
+seaborn
+spacy

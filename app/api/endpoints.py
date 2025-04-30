@@ -1,3 +1,6 @@
+"""
+API endpoints for the Shakers AI Support System.
+"""
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query, Request
 from fastapi.responses import JSONResponse
 from typing import List, Dict, Any, Optional
@@ -17,51 +20,63 @@ from app.models.schemas import (
     Document
 )
 from app.services.rag import RAGService
-from app.services.recommendations import RecommendationService
+from app.services.enhanced_recommendations import EnhancedRecommendationService
 from app.utils.helpers import logger, time_function, cache_result
+from app.utils.search import SearchEngine
+from app.utils.evaluation import evaluate_recommendation_quality
 from app.config import settings
 
 router = APIRouter()
 
-# Create service instances
+# Create service instances here instead of importing from main
 rag_service = RAGService()
-recommendation_service = RecommendationService()
+recommendation_service = EnhancedRecommendationService()
+search_engine = SearchEngine()
 
 # Cache for frequently requested endpoints
 response_cache = {}
 
 async def get_rag_service() -> RAGService:
-    """Dependency to get the RAG service with lazy initialization."""
+    """Dependency to get the RAG service."""
     if not rag_service.initialized:
         # Don't block the request with initialization
         # Instead, start initialization in background if not already running
-        if not hasattr(rag_service, '_initializing'):
+        if not getattr(rag_service, '_initializing', False):
             rag_service._initializing = True
             asyncio.create_task(rag_service.initialize())
     return rag_service
 
-async def get_recommendation_service() -> RecommendationService:
-    """Dependency to get the recommendation service with lazy initialization."""
+async def get_recommendation_service() -> EnhancedRecommendationService:
+    """Dependency to get the recommendation service."""
     if not recommendation_service.initialized:
         # Only initialize if RAG service is ready
         if rag_service.initialized:
-            if not hasattr(recommendation_service, '_initializing'):
+            if not getattr(recommendation_service, '_initializing', False):
                 recommendation_service._initializing = True
                 asyncio.create_task(recommendation_service.initialize(rag_service.documents))
     return recommendation_service
+
+async def get_search_engine() -> SearchEngine:
+    """Dependency to get the search engine."""
+    # Use the locally created search_engine instance
+    if search_engine.document_vectors is None:
+        # Initialize search engine if RAG service is ready
+        if rag_service.initialized:
+            search_engine.initialize(rag_service.documents)
+    return search_engine
 
 @router.post("/query", response_model=QueryResponse)
 async def process_query(
     request: QueryRequest,
     background_tasks: BackgroundTasks,
-    rag_service: RAGService = Depends(get_rag_service),
-    recommendation_service: RecommendationService = Depends(get_recommendation_service)
+    rag_svc: RAGService = Depends(get_rag_service),
+    recommendation_svc: EnhancedRecommendationService = Depends(get_recommendation_service)
 ):
     """Process a user query with optimized performance."""
     start_time = time.time()
     
     # Check if services are initialized
-    if not rag_service.initialized:
+    if not rag_svc.initialized:
         return JSONResponse(
             status_code=503,
             content={
@@ -79,8 +94,12 @@ async def process_query(
             
         # Process query with enhanced RAG system
         try:
-            rag_response, processing_time = await asyncio.wait_for(
-                rag_service.process_query(
+            # First, check if it's a talent search query
+            intent = search_engine.analyze_intent(request.query)
+            
+            # Process with RAG
+            response, processing_time = await asyncio.wait_for(
+                rag_svc.process_query(
                     request.query, 
                     user_id=request.user_id
                 ),
@@ -89,7 +108,7 @@ async def process_query(
         except asyncio.TimeoutError:
             # If we timeout, create a basic response
             logger.warning(f"Query processing timed out after {timeout}s: {request.query}")
-            rag_response = RAGResponse(
+            response = RAGResponse(
                 query=request.query,
                 answer="I'm sorry, but it's taking longer than expected to process your query. Could you try asking a more specific question about Shakers?",
                 sources=[],
@@ -98,18 +117,21 @@ async def process_query(
             )
             processing_time = timeout
         
+        # Extract source document IDs
+        source_ids = [source.document_id for source in response.sources]
+        
         # Save chat history in background so it doesn't delay response
         background_tasks.add_task(
-            recommendation_service.add_chat_to_user_history,
+            recommendation_svc.add_chat_to_user_history,
             user_id=request.user_id,
             user_message=request.query,
-            assistant_message=rag_response.answer
+            assistant_message=response.answer,
+            sources_used=source_ids
         )
         
-        # Generate recommendations - don't use wait_for as it's more important to get some recommendations
-        # than to time out and get none
+        # Generate recommendations
         logger.info("Generating recommendations")
-        recommendations = await recommendation_service.generate_recommendations(
+        recommendations = await recommendation_svc.generate_recommendations(
             request.user_id, request.query
         )
         
@@ -119,76 +141,23 @@ async def process_query(
         background_tasks.add_task(
             _mark_documents_as_viewed,
             request.user_id,
-            [source.document_id for source in rag_response.sources]
+            source_ids
         )
         
-        # If no recommendations were found, generate some default ones
-        if not recommendations and recommendation_service.initialized:
-            logger.info("No recommendations generated - creating fallback recommendations")
-            try:
-                # Get documents that haven't been viewed as fallback recommendations
-                if request.user_id in recommendation_service.users:
-                    viewed_docs = set(recommendation_service.users[request.user_id].viewed_documents)
-                else:
-                    viewed_docs = set()
-                
-                fallback_recs = []
-                
-                # First try with unviewed documents
-                for doc in rag_service.documents:
-                    if doc.id not in viewed_docs and len(fallback_recs) < 3:
-                        fallback_recs.append(
-                            Recommendation(
-                                document_id=doc.id,
-                                title=doc.title,
-                                path=doc.path,
-                                explanation="Recommended resource about Shakers",
-                                relevance_score=0.5
-                            )
-                        )
-                
-                # If we don't have enough recommendations, include viewed documents too
-                if len(fallback_recs) < 2 and len(rag_service.documents) > 0:
-                    for doc in rag_service.documents:
-                        # Skip if already added
-                        if any(rec.document_id == doc.id for rec in fallback_recs):
-                            continue
-                            
-                        if len(fallback_recs) < 3:
-                            fallback_recs.append(
-                                Recommendation(
-                                    document_id=doc.id,
-                                    title=doc.title,
-                                    path=doc.path,
-                                    explanation="This resource may be worth reviewing again" if doc.id in viewed_docs else "Recommended resource about Shakers",
-                                    relevance_score=0.4  # Lower score for viewed documents
-                                )
-                            )
-                
-                recommendations = fallback_recs
-                logger.info(f"Created {len(fallback_recs)} fallback recommendations")
-            except Exception as e:
-                logger.error(f"Error creating fallback recommendations: {e}")
-                logger.error(traceback.format_exc())
-        
         # Create the full response
-        response = QueryResponse(
-            answer=rag_response.answer,
-            sources=rag_response.sources,
+        response_obj = QueryResponse(
+            answer=response.answer,
+            sources=response.sources,
             recommendations=recommendations,
             processing_time=processing_time,
-            evaluation=rag_response.evaluation
+            evaluation=response.evaluation
         )
         
         # Log total response time
         total_time = time.time() - start_time
         logger.info(f"Total query response time: {total_time:.4f}s")
         
-        # Log recommendation info
-        logger.info(f"Returning {len(recommendations)} recommendations")
-        for rec in recommendations:
-            logger.debug(f"Recommendation: {rec['title']} (score: {rec['relevance_score']:.2f})")        
-        return response
+        return response_obj
     
     except Exception as e:
         # Log the error
@@ -235,6 +204,7 @@ async def health_check():
     # Add initialization status
     health_data["rag_status"] = "online" if rag_service.initialized else "initializing"
     health_data["recommendation_status"] = "online" if recommendation_service.initialized else "initializing"
+    health_data["search_status"] = "online" if search_engine.document_vectors is not None else "initializing"
     
     # Only add metrics if services are initialized
     if rag_service.initialized:
@@ -304,7 +274,7 @@ async def update_knowledge_base():
     """Update the knowledge base with new documents."""
     if not rag_service.initialized:
         # Start initialization if not already running
-        if not hasattr(rag_service, '_initializing'):
+        if not getattr(rag_service, '_initializing', False):
             rag_service._initializing = True
             asyncio.create_task(rag_service.initialize())
         
@@ -389,3 +359,117 @@ async def get_user_profile(user_id: str):
         )
     
     return user
+
+@router.post("/documents/{document_id}/view")
+async def mark_document_viewed(
+    document_id: str,
+    request: Dict[str, Any]
+):
+    """Mark a document as viewed by a user."""
+    if not recommendation_service.initialized:
+        raise HTTPException(
+            status_code=503,
+            detail="Recommendation service is initializing. Please try again in a few seconds."
+        )
+    
+    user_id = request.get("user_id")
+    if not user_id:
+        raise HTTPException(
+            status_code=400,
+            detail="User ID is required"
+        )
+    
+    # Check if document exists
+    doc = next((doc for doc in rag_service.documents if doc.id == document_id), None)
+    if not doc:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Document with ID {document_id} not found"
+        )
+    
+    await recommendation_service.mark_document_as_viewed(user_id, document_id)
+    
+    return {"status": "success", "message": f"Document {document_id} marked as viewed by user {user_id}"}
+
+@router.get("/search")
+async def search_documents(
+    q: str = Query(..., description="Search query"),
+    limit: int = Query(5, description="Maximum number of results")
+):
+    """Search documents using the search engine."""
+    if search_engine.document_vectors is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Search engine is initializing. Please try again in a few seconds."
+        )
+    
+    # Analyze intent
+    intent = search_engine.analyze_intent(q)
+    
+    if intent["is_talent_search"]:
+        # This is a talent search query
+        results = search_engine.search_talent(q, limit=limit)
+    else:
+        # General search query
+        results = search_engine.search(q, limit=limit)
+    
+    # Format results
+    formatted_results = [
+        {
+            "document_id": doc.id,
+            "title": doc.title,
+            "path": doc.path,
+            "relevance": float(score),
+            "category": getattr(doc, "category", None),
+            "tags": getattr(doc, "tags", [])
+        }
+        for doc, score in results
+    ]
+    
+    return {
+        "query": q,
+        "intent": intent,
+        "total_results": len(formatted_results),
+        "results": formatted_results
+    }
+
+@router.post("/evaluate/recommendations")
+async def evaluate_recommendations(
+    request: Dict[str, Any]
+):
+    """Evaluate the quality of recommendations."""
+    query = request.get("query")
+    recommendations = request.get("recommendations", [])
+    user_history = request.get("user_history", [])
+    
+    if not query:
+        raise HTTPException(
+            status_code=400,
+            detail="Query is required"
+        )
+    
+    if not recommendations:
+        return {
+            "status": "warning",
+            "message": "No recommendations to evaluate",
+            "metrics": {
+                "relevance_score": 0.0,
+                "diversity_score": 0.0,
+                "overall_score": 0.0
+            }
+        }
+    
+    try:
+        evaluation = await evaluate_recommendation_quality(query, recommendations, user_history)
+        
+        return {
+            "status": "success",
+            "message": "Recommendations evaluated successfully",
+            "metrics": evaluation
+        }
+    except Exception as e:
+        logger.error(f"Error evaluating recommendations: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to evaluate recommendations: {str(e)}"
+        )

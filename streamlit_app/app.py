@@ -1,3 +1,6 @@
+"""
+Streamlit frontend for the Shakers AI Support System.
+"""
 import streamlit as st
 import requests
 import uuid
@@ -79,6 +82,12 @@ st.markdown("""
         border-radius: 0.75rem 0.75rem 0.25rem 0.75rem;
         margin-bottom: 0.75rem;
     }
+    .search-container {
+        background-color: #F3F4F6;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -97,6 +106,8 @@ if "last_recommendations" not in st.session_state:
     st.session_state.last_recommendations = []
 if "viewed_documents" not in st.session_state:
     st.session_state.viewed_documents = set()
+if "search_results" not in st.session_state:
+    st.session_state.search_results = []
 
 # App header with logo
 col1, col2 = st.columns([1, 5])
@@ -125,6 +136,45 @@ with st.sidebar:
         st.checkbox("Enable detailed explanations", value=True, key="detailed_explanations")
         st.checkbox("Show source relevance scores", value=True, key="show_relevance")
         st.select_slider("Max recommendations", options=[1, 2, 3, 4, 5], value=3, key="max_recommendations")
+    
+    # Talent Search section
+    # st.header("🔍 Talent Search")
+    # talent_search = st.text_input("Find talent with specific skills:", placeholder="e.g., React developer")
+    
+    # if talent_search:
+    #     try:
+    #         # Call the search endpoint
+    #         response = requests.get(
+    #             f"{API_URL}/search",
+    #             params={"q": talent_search, "limit": 3}
+    #         )
+            
+    #         if response.status_code == 200:
+    #             search_data = response.json()
+    #             st.session_state.search_results = search_data["results"]
+                
+    #             # Display talent search results
+    #             st.subheader("Matching Talent")
+    #             for result in search_data["results"]:
+    #                 st.markdown(f"<div class='source-card'>", unsafe_allow_html=True)
+    #                 st.markdown(f"**{result['title']}**")
+    #                 st.markdown(f"<div class='info-text'>Relevance: {result['relevance']:.2f}</div>", unsafe_allow_html=True)
+                    
+    #                 # Add a button to view full profile
+    #                 if st.button(f"View Profile", key=f"search_{result['document_id']}"):
+    #                     # Call API to mark document as viewed
+    #                     requests.post(
+    #                         f"{API_URL}/documents/{result['document_id']}/view",
+    #                         json={"user_id": st.session_state.user_id}
+    #                     )
+    #                     st.session_state.viewed_documents.add(result['document_id'])
+    #                     st.success(f"Viewing profile: {result['title']}")
+                    
+    #                 st.markdown("</div>", unsafe_allow_html=True)
+    #         else:
+    #             st.error(f"Error searching for talent: {response.status_code}")
+    #     except Exception as e:
+    #         st.error(f"Error: {str(e)}")
     
     # API health check
     st.header("🔌 API Status")
@@ -303,9 +353,6 @@ with col2:
         if "last_recommendations" not in st.session_state:
             st.session_state.last_recommendations = []
         
-        # Add debug information but remove from production
-        logger.debug(f"Recommendations in state: {len(st.session_state.last_recommendations)}")
-        
         if st.session_state.last_recommendations:
             try:
                 for rec in st.session_state.last_recommendations:
@@ -453,6 +500,10 @@ if query:
             if "sources" in result and result["sources"]:
                 assistant_message["sources"] = result["sources"]
             
+            # Add evaluation if available
+            if "evaluation" in result and result["evaluation"]:
+                st.session_state.evaluation_scores.append(result["evaluation"])
+            
             # Add recommendations if available - improved logging and debugging
             if "recommendations" in result and result["recommendations"]:
                 st.session_state.last_recommendations = result["recommendations"]
@@ -461,7 +512,6 @@ if query:
             else:
                 logger.info("No recommendations in result")
                 # Don't clear recommendations if none are available
-                # This is the key fix - don't set to empty list which causes loss of previous recommendations
             
             # Add to chat history
             st.session_state.chat_history.append(assistant_message)

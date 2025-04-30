@@ -1,0 +1,251 @@
+[
+  {
+    "user_id": "user1",
+    "interests": [
+      "full-stack",
+      "angular",
+      "mobile design",
+      "content marketing",
+      "project management",
+      "legal consultation",
+      "financial analysis",
+      "hiring"
+    ],
+    "viewed_documents": [
+      "getting-started-guide.md"
+    ],
+    "queries": [
+      "Need help with content writing writing",
+      "I need someone to write blog posts",
+      "Looking for someone who knows cloud",
+      "Need help with proofreading writing",
+      "Looking for someone to design illustration",
+      "Who can help with logo design design?",
+      "Need advice on project management"
+    ],
+    "last_active": "2025-04-05T18:21:24.647022"
+  },
+  {
+    "user_id": "user2",
+    "interests": [
+      "android",
+      "cloud",
+      "ux design",
+      "ui design",
+      "branding",
+      "technical writing",
+      "digital marketing",
+      "social media"
+    ],
+    "viewed_documents": [
+      "client-success-guide.md",
+      "freelancer-profiles.md",
+      "freelancer-success-guide.md",
+      "freelancers.md"
+    ],
+    "queries": [
+      "Who can help create seo writing content?",
+      "Tell me about fees on the platform",
+      "How to handle invoicing on Shakers?",
+      "Looking for help with hr consulting"
+    ],
+    "last_active": "2025-04-12T18:21:24.647048"
+  },
+  {
+    "user_id": "user3",
+    "interests": [
+      "devops"
+    ],
+    "viewed_documents": [
+      "freelancer-success-guide.md"
+    ],
+    "queries": [
+      "Help me find a node.js expert",
+      "I need a hr consulting consultant",
+      "How does invoicing work on Shakers?",
+      "Who can help create content writing content?",
+      "Looking for someone who knows ios",
+      "Looking for a editing writer",
+      "Tell me about proposals on the platform",
+      "Who can help create editing content?"
+    ],
+    "last_active": "2025-04-18T18:21:24.647064"
+  },
+  {
+    "user_id": "user4",
+    "interests": [
+      "frontend",
+      "backend",
+      "branding",
+      "ux design",
+      "digital marketing",
+      "growth hacking",
+      "seo"
+    ],
+    "viewed_documents": [],
+    "queries": [
+      "Looking for someone to design ui design",
+      "Tell me about reviews on the platform",
+      "Looking for a email marketing marketer",
+      "Need help with editing writing",
+      "How does proposals work on Shakers?"
+    ],
+    "last_active": "2025-04-12T18:21:24.647078"
+  },
+  {
+    "user_id": "user5",
+    "interests": [
+      "social media",
+      "virtual assistance",
+      "financial analysis",
+      "hiring"
+    ],
+    "viewed_documents": [
+      "payments.md"
+    ],
+    "queries": [
+      "Who can build a python application?",
+      "Looking for a sem marketer",
+      "Help me find a devops expert"
+    ],
+    "last_active": "2025-04-23T18:21:24.647089"
+  },
+  {
+    "user_id": "user6",
+    "interests": [
+      "vue",
+      "javascript",
+      "angular",
+      "logo design",
+      "proofreading",
+      "seo writing",
+      "sem",
+      "virtual assistance",
+      "project management",
+      "fees",
+      "proposals"
+    ],
+    "viewed_documents": [
+      "skill-assessment-guide.md",
+      "shakers-technical-documentation.md"
+    ],
+    "queries": [
+      "Looking for someone who knows full-stack",
+      "How does proposals work on Shakers?",
+      "I need a branding designer",
+      "Need help with seo writing writing",
+      "How does escrow work on Shakers?",
+      "Who can help with graphic design design?"
+    ],
+    "last_active": "2025-04-22T18:21:24.647120"
+  },
+  {
+    "user_id": "user7",
+    "interests": [
+      "devops",
+      "full-stack",
+      "illustration",
+      "ui design",
+      "mobile design",
+      "seo writing",
+      "legal consultation",
+      "financial analysis",
+      "contracts",
+      "invoicing",
+      "fees"
+    ],
+    "viewed_documents": [],
+    "queries": [
+      "Need a creative ui design specialist",
+      "Tell me about freelancer verification on the platform",
+      "I need help with social media marketing",
+      "How does invoicing work on Shakers?",
+      "Looking for a growth hacking marketer",
+      "Who can build a ios application?"
+    ],
+    "last_active": "2025-04-22T18:21:24.647139"
+  },
+  {
+    "user_id": "user8",
+    "interests": [
+      "vue",
+      "frontend",
+      "mobile design",
+      "illustration",
+      "ux design",
+      "digital marketing",
+      "seo",
+      "content marketing",
+      "legal consultation",
+      "hr consulting",
+      "project management",
+      "invoicing"
+    ],
+    "viewed_documents": [
+      "finding_talent.md",
+      "platform-features.md"
+    ],
+    "queries": [
+      "Who can help create translation content?",
+      "How to handle contracts on Shakers?",
+      "Looking for help with virtual assistance"
+    ],
+    "last_active": "2025-04-02T18:21:24.647155"
+  },
+  {
+    "user_id": "user9",
+    "interests": [
+      "angular",
+      "branding",
+      "logo design",
+      "proofreading",
+      "technical writing",
+      "translation",
+      "digital marketing",
+      "seo",
+      "email marketing",
+      "freelancer verification",
+      "hiring"
+    ],
+    "viewed_documents": [
+      "dispute-resolution.md",
+      "freelancer-profiles.md"
+    ],
+    "queries": [
+      "Looking for a content writing writer",
+      "I need a hr consulting consultant",
+      "Who can manage my social media campaigns?",
+      "Who can assist with project management management?",
+      "Tell me about freelancer verification on the platform"
+    ],
+    "last_active": "2025-04-14T18:21:24.647175"
+  },
+  {
+    "user_id": "user10",
+    "interests": [
+      "web design",
+      "branding",
+      "proofreading",
+      "technical writing",
+      "translation",
+      "seo",
+      "fees",
+      "hiring",
+      "contracts"
+    ],
+    "viewed_documents": [
+      "payments.md"
+    ],
+    "queries": [
+      "I need a web design designer",
+      "How to handle invoicing on Shakers?",
+      "What are the fees policies?",
+      "Who can help with branding design?",
+      "How does reviews work on Shakers?",
+      "What are the proposals policies?",
+      "How to handle fees on Shakers?",
+      "Who can assist with financial analysis management?"
+    ],
+    "last_active": "2025-04-10T18:21:24.647197"
+  }
+]
