@@ -35,3 +35,4 @@ pytest-cov
 typing-extensions
 aiofiles
 uvloop
+black
