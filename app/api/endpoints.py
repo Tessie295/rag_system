@@ -1,7 +1,9 @@
 """
 API endpoints for the Shakers AI Support System.
 """
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query, Request
+import os
+import shutil
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query, Request, BackgroundTasks
 from fastapi.responses import JSONResponse
 from typing import List, Dict, Any, Optional
 from datetime import datetime
@@ -472,4 +474,46 @@ async def evaluate_recommendations(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to evaluate recommendations: {str(e)}"
+        )
+    
+@router.post("/reset", response_model=Dict[str, str])
+async def reset_data(background_tasks: BackgroundTasks):
+    """Reset all stored data in the application."""
+    try:
+        # Reset vector database (requires reinitialization)
+        vector_db_path = os.path.join(settings.DATA_DIR, "vector_db")
+        if os.path.exists(vector_db_path):
+            shutil.rmtree(vector_db_path)
+        
+        # Reset user profiles
+        users_file = os.path.join(settings.DATA_DIR, "users.json")
+        if os.path.exists(users_file):
+            os.remove(users_file)
+        
+        # Reset metrics
+        metrics_dir = os.path.join(settings.DATA_DIR, "metrics")
+        if os.path.exists(metrics_dir):
+            shutil.rmtree(metrics_dir)
+            os.makedirs(metrics_dir, exist_ok=True)
+        
+        # Clear caches
+        rag_service.response_cache = {}
+        recommendation_service.users = {}
+        
+        # Schedule reinitialization in the background
+        background_tasks.add_task(rag_service.initialize, force_refresh=True)
+        background_tasks.add_task(
+            recommendation_service.initialize, 
+            rag_service.documents
+        )
+        
+        return {
+            "status": "success", 
+            "message": "All data reset successfully. Services are reinitializing."
+        }
+    except Exception as e:
+        logger.error(f"Error resetting data: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to reset data: {str(e)}"
         )

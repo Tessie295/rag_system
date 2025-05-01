@@ -112,7 +112,7 @@ if "search_results" not in st.session_state:
 # App header with logo
 col1, col2 = st.columns([1, 5])
 with col1:
-    st.image("https://via.placeholder.com/100x100.png?text=Shakers", width=80)
+    st.image("app/data/logo/shakersworks_logo.jpeg", width=80)
 with col2:
     st.markdown("<div class='main-header'>Shakers AI Support System</div>", unsafe_allow_html=True)
     st.markdown("<div class='info-text'>Find answers about the platform and discover the perfect talent for your projects</div>", unsafe_allow_html=True)
@@ -293,6 +293,24 @@ with st.sidebar:
             st.plotly_chart(fig, use_container_width=True)
     else:
         st.info("Analytics will appear after your first query")
+    
+    st.header("🧹 Maintenance")
+
+    if st.button("Reset All Data"):
+        try:
+            response = requests.post(f"{API_URL}/reset")
+            if response.status_code == 200:
+                st.success("Data reset successfully! Restarting application...")
+                # Clear session state
+                for key in list(st.session_state.keys()):
+                    del st.session_state[key]
+                st.rerun()  # Restart the Streamlit app
+            else:
+                st.error(f"Failed to reset data: {response.status_code}")
+                if response.text:
+                    st.error(response.text)
+        except Exception as e:
+            st.error(f"Error: {str(e)}")
 
 # Main chat interface in two columns
 col1, col2 = st.columns([2, 1])
