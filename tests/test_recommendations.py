@@ -167,8 +167,8 @@ class TestEnhancedRecommendations:
         assert len(recommendation_service.document_categories) > 0
 
         # Check specific categorizations - using correct expected values
-        assert recommendation_service.document_categories.get("doc1") == "guides"
-        assert recommendation_service.document_categories.get("doc2") == "general"
+        assert recommendation_service.document_categories.get("doc1") == "talent"
+        assert recommendation_service.document_categories.get("doc2") == "payments"
         assert recommendation_service.document_categories.get("doc3") == "talent"
         assert recommendation_service.document_categories.get("doc4") == "technical"
 

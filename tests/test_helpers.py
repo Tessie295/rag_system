@@ -22,8 +22,6 @@ from app.utils.helpers import (
     markdown_to_text,
     chunk_text,
     is_out_of_scope,
-    detect_language,
-    save_metrics,
     load_metrics,
     cache_result,
     logger,
@@ -242,94 +240,6 @@ This is test content.
         assert is_out_of_scope("query", 0.0, [0.0, 0.0, 0.0]) is False
         assert is_out_of_scope("query", 1.0, [0.9, 0.95, 0.8]) is True
 
-    def test_detect_language(self):
-        """Test the detect_language function."""
-        # Test English text
-        assert (
-            detect_language("This is English text for testing language detection.")
-            == "en"
-        )
-
-        # Test Spanish text
-        assert (
-            detect_language(
-                "Este es un texto en español para probar la detección de idioma."
-            )
-            == "es"
-        )
-
-        # Test with short text (might not be reliable)
-        short_result = detect_language("Hello")
-        assert short_result is None or isinstance(short_result, str)
-
-        # Test with very long text (should only process the first 100 chars)
-        long_text = "English text " * 100
-        with patch("app.utils.helpers.detect") as mock_detect:
-            mock_detect.return_value = "en"
-
-            detect_language(long_text)
-
-            # Should only pass the first 100 characters
-            args, _ = mock_detect.call_args
-            assert len(args[0]) <= 100
-
-        # Test error handling
-        with patch("app.utils.helpers.detect") as mock_detect:
-            mock_detect.side_effect = Exception("Test error")
-
-            result = detect_language("Some text")
-            assert result is None
-
-    @pytest.mark.asyncio
-    async def test_save_metrics(self):
-        """Test the save_metrics function."""
-        # Test with basic metrics
-        metrics_data = {
-            "count": 42,
-            "average": 0.75,
-            "items": ["item1", "item2", "item3"],
-        }
-
-        # Test successful save
-        with patch("os.makedirs") as mock_makedirs, patch(
-            "builtins.open", mock_open()
-        ) as mock_file, patch("os.replace") as mock_replace:
-
-            result = await save_metrics("test_metrics", metrics_data)
-
-            assert result is True
-            assert mock_makedirs.called
-            assert mock_file.called
-            assert mock_replace.called
-
-            # Check that the last_updated field was added
-            write_call = mock_file().write.call_args[0][0]
-            assert "last_updated" in write_call
-
-        # Test with large array metrics (should truncate arrays)
-        large_array_metrics = {"count": 42, "values": list(range(200))}  # 200 items
-
-        with patch("os.makedirs") as mock_makedirs, patch(
-            "builtins.open", mock_open()
-        ) as mock_file, patch("os.replace") as mock_replace:
-
-            result = await save_metrics("large_metrics", large_array_metrics)
-
-            assert result is True
-
-            # Check that the array was truncated
-            write_call = mock_file().write.call_args[0][0]
-            assert "values" in write_call
-            assert len(large_array_metrics["values"]) > 100  # Original untouched
-
-        # Test error handling
-        with patch("os.makedirs") as mock_makedirs, patch("builtins.open") as mock_file:
-
-            mock_file.side_effect = Exception("Test error")
-
-            result = await save_metrics("error_metrics", metrics_data)
-
-            assert result is False
 
     @pytest.mark.asyncio
     async def test_load_metrics(self):

@@ -1,0 +1,367 @@
+[
+    {
+        "user_id": "851efd2c-063b-478d-bfaa-905604fb7376",
+        "viewed_documents": [
+            "platform-features",
+            "finding_talent",
+            "security-privacy",
+            "freelancers",
+            "freelancer-success-guide",
+            "shakers-qa-dataset",
+            "payments"
+        ],
+        "chat_history": [
+            {
+                "user_message": "What is Shakers about?",
+                "assistant_message": "Shakers is a platform that connects clients with freelance talent across various disciplines, including Development & IT, Design & Creative, Writing & Content, Marketing & Sales, and Business & Consulting [Document: Freelancers on Shakers]. The platform offers powerful tools and features to help clients find the perfect freelancer for their projects through advanced search filters, AI-powered matching, and comprehensive freelancer profiles [Document: Finding the Right Talent on Shakers]. Additionally, Shakers prioritizes security and privacy by offering multiple authentication methods, session management features, and account recovery options [Document: Security and Privacy on Shakers]. The platform aims to create a comprehensive environment for successful freelance collaboration, allowing both clients and freelancers to achieve their goals efficiently and securely [Document: Shakers Platform Features].",
+                "timestamp": "2025-05-01 12:40:25.239478",
+                "feedback": null,
+                "sources_used": [
+                    "platform-features",
+                    "finding_talent",
+                    "security-privacy",
+                    "freelancers",
+                    "freelancer-success-guide"
+                ]
+            },
+            {
+                "user_message": "And how payments work?",
+                "assistant_message": "The payment system on Shakers works by following these steps:\n\n1. Clients create a project with a set budget or hourly rate.\n2. Once a freelancer is hired, the client funds the project by placing the agreed amount in escrow.\n3. For fixed-price projects, clients can create milestones and release payments as deliverables are completed.\n4. For hourly projects, freelancers log their hours using the time-tracking system, and clients are billed weekly.\n5. Once the client approves the work, the funds are released to the freelancer's Shakers account.\n6. Freelancers can withdraw their earnings through various methods like bank transfers, PayPal, and other payment services [Document: Payment System in Shakers].",
+                "timestamp": "2025-05-01 12:40:44.502367",
+                "feedback": null,
+                "sources_used": [
+                    "shakers-qa-dataset",
+                    "payments",
+                    "platform-features",
+                    "shakers-qa-dataset",
+                    "shakers-qa-dataset"
+                ]
+            }
+        ],
+        "interests": [
+            {
+                "topic": "Shakers Platform Features",
+                "document_id": "platform-features",
+                "category": "general",
+                "strength": 1.8,
+                "first_mentioned": "2025-05-01 12:40:25.240112",
+                "last_mentioned": "2025-05-01 12:40:44.502562"
+            },
+            {
+                "topic": "Finding the Right Talent on Shakers",
+                "document_id": "finding_talent",
+                "category": "talent",
+                "strength": 1.5,
+                "first_mentioned": "2025-05-01 12:40:25.240135",
+                "last_mentioned": "2025-05-01 12:40:25.242282"
+            },
+            {
+                "topic": "Security and Privacy on Shakers",
+                "document_id": "security-privacy",
+                "category": "general",
+                "strength": 1.5,
+                "first_mentioned": "2025-05-01 12:40:25.240153",
+                "last_mentioned": "2025-05-01 12:40:25.242750"
+            },
+            {
+                "topic": "Freelancers on Shakers",
+                "document_id": "freelancers",
+                "category": "general",
+                "strength": 1.5,
+                "first_mentioned": "2025-05-01 12:40:25.240156",
+                "last_mentioned": "2025-05-01 12:40:25.243245"
+            },
+            {
+                "topic": "Freelancer Success Guide for Shakers",
+                "document_id": "freelancer-success-guide",
+                "category": "guides",
+                "strength": 1.5,
+                "first_mentioned": "2025-05-01 12:40:25.240160",
+                "last_mentioned": "2025-05-01 12:40:25.243608"
+            },
+            {
+                "topic": "Shakers Platform Q&A Dataset",
+                "document_id": "shakers-qa-dataset",
+                "category": "general",
+                "strength": 2.1,
+                "first_mentioned": "2025-05-01 12:40:44.502528",
+                "last_mentioned": "2025-05-01 12:40:44.503226"
+            },
+            {
+                "topic": "Payment System in Shakers",
+                "document_id": "payments",
+                "category": "payments",
+                "strength": 1.5,
+                "first_mentioned": "2025-05-01 12:40:44.502548",
+                "last_mentioned": "2025-05-01 12:40:44.504033"
+            }
+        ],
+        "last_active": "2025-05-01 12:40:25.236094",
+        "preferences": {},
+        "recent_recommendations": [
+            {
+                "document_id": "payments",
+                "title": "Payment System in Shakers",
+                "path": "./app/data/knowledge_base/payments.md",
+                "explanation": "Relevant to your current question",
+                "relevance_score": 0.1199986964119997,
+                "category": null,
+                "tags": [
+                    "payments",
+                    "freelancers",
+                    "clients"
+                ]
+            },
+            {
+                "document_id": "shakers-qa-dataset",
+                "title": "Shakers Platform Q&A Dataset",
+                "path": "./app/data/knowledge_base/shakers-qa-dataset.md",
+                "explanation": "Relevant to your current question",
+                "relevance_score": 0.05402784479757261,
+                "category": null,
+                "tags": []
+            },
+            {
+                "document_id": "getting-started-guide",
+                "title": "Getting Started with Shakers",
+                "path": "./app/data/knowledge_base/getting-started-guide.md",
+                "explanation": "Relevant to your current question",
+                "relevance_score": 0.04265960234541145,
+                "category": null,
+                "tags": [
+                    "beginners",
+                    "introduction",
+                    "tutorial"
+                ]
+            }
+        ]
+    },
+    {
+        "user_id": "3cfee2a8-dcad-46bd-83b2-d1033e1234b3",
+        "viewed_documents": [
+            "platform-features",
+            "freelancers",
+            "finding_talent",
+            "getting-started-guide",
+            "payments",
+            "freelancer-profiles",
+            "freelancer-success-guide",
+            "shakers-user-profiles",
+            "shakers-qa-dataset"
+        ],
+        "chat_history": [
+            {
+                "user_message": "Can you explain me what is Shakers?",
+                "assistant_message": "Shakers is a platform that connects clients with freelance talent across various disciplines such as Development & IT, Design & Creative, Writing & Content, Marketing & Sales, and Business & Consulting. Freelancers on Shakers are independent professionals who offer their services on a project-by-project basis, operating as independent contractors. The platform offers powerful tools and features to help clients find the right talent for their projects, including advanced search filters, AI-powered matching, and comprehensive freelancer profiles. Additionally, Shakers provides a secure payment system that ensures both clients and freelancers are protected throughout the transaction process [Document: Shakers Platform Features].",
+                "timestamp": "2025-05-01 16:38:10.816669",
+                "feedback": null,
+                "sources_used": [
+                    "platform-features",
+                    "freelancers",
+                    "finding_talent",
+                    "getting-started-guide",
+                    "payments"
+                ]
+            },
+            {
+                "user_message": "How payments work?",
+                "assistant_message": "I'm sorry, but it's taking longer than expected to process your query. Could you try asking a more specific question about Shakers?",
+                "timestamp": "2025-05-01 16:38:29.107124",
+                "feedback": null,
+                "sources_used": []
+            },
+            {
+                "user_message": "What about payments?",
+                "assistant_message": "I'm sorry, but it's taking longer than expected to process your query. Could you try asking a more specific question about Shakers?",
+                "timestamp": "2025-05-01 16:38:50.099502",
+                "feedback": null,
+                "sources_used": []
+            },
+            {
+                "user_message": "Can you recommend me someone with Docker skills?",
+                "assistant_message": "Based on the provided context, Aisha Patel is a recommended freelancer with Docker skills. She is a DevOps Engineer with expertise in Docker listed in her skills section [Document: Top Freelancer Profiles on Shakers].",
+                "timestamp": "2025-05-01 16:39:18.193884",
+                "feedback": null,
+                "sources_used": [
+                    "freelancer-profiles",
+                    "freelancer-profiles",
+                    "finding_talent",
+                    "freelancer-profiles",
+                    "freelancer-profiles"
+                ]
+            },
+            {
+                "user_message": "Do you know anyone else?",
+                "assistant_message": "I'm sorry, I don't have enough information to answer this question about Shakers. This topic appears to be outside the scope of my knowledge about the platform.",
+                "timestamp": "2025-05-01 16:39:30.205993",
+                "feedback": null,
+                "sources_used": []
+            },
+            {
+                "user_message": "There's more freelancers with Docker skills?",
+                "assistant_message": "Based on the provided context, there is only one freelancer mentioned with Docker skills, which is Sarah Chen, a Full-Stack Web Developer on Shakers [Document: Top Freelancer Profiles on Shakers].",
+                "timestamp": "2025-05-01 16:39:51.372739",
+                "feedback": null,
+                "sources_used": [
+                    "freelancer-profiles",
+                    "freelancer-success-guide",
+                    "finding_talent",
+                    "freelancers",
+                    "shakers-user-profiles"
+                ]
+            },
+            {
+                "user_message": "How are payments?",
+                "assistant_message": "Based on the provided context, payments on the Shakers platform are facilitated through an Escrow System where funds are held securely until work is approved, Milestone Payments that allow for releasing funds at project checkpoints, and Hourly Payments for tracking time worked. Clients can set up payment methods such as credit/debit cards, digital wallets, bank transfers, and alternative payment methods. Freelancers can withdraw their earnings through various methods including bank transfers, PayPal, Wise, and cryptocurrency. The platform also provides payment protection for both clients and freelancers through structured processes and secure payment infrastructure [Document: Payment System in Shakers].",
+                "timestamp": "2025-05-01 16:40:13.284587",
+                "feedback": null,
+                "sources_used": [
+                    "platform-features",
+                    "payments",
+                    "shakers-qa-dataset",
+                    "shakers-qa-dataset",
+                    "shakers-qa-dataset"
+                ]
+            }
+        ],
+        "interests": [
+            {
+                "topic": "Shakers Platform Features",
+                "document_id": "platform-features",
+                "category": "general",
+                "strength": 1.8,
+                "first_mentioned": "2025-05-01 16:38:10.817462",
+                "last_mentioned": "2025-05-01 16:40:13.284663"
+            },
+            {
+                "topic": "Freelancers on Shakers",
+                "document_id": "freelancers",
+                "category": "general",
+                "strength": 1.8,
+                "first_mentioned": "2025-05-01 16:38:10.817483",
+                "last_mentioned": "2025-05-01 16:39:51.372886"
+            },
+            {
+                "topic": "Finding the Right Talent on Shakers",
+                "document_id": "finding_talent",
+                "category": "talent",
+                "strength": 2.1,
+                "first_mentioned": "2025-05-01 16:38:10.817492",
+                "last_mentioned": "2025-05-01 16:39:51.372882"
+            },
+            {
+                "topic": "Getting Started with Shakers",
+                "document_id": "getting-started-guide",
+                "category": "guides",
+                "strength": 1.5,
+                "first_mentioned": "2025-05-01 16:38:10.817497",
+                "last_mentioned": "2025-05-01 16:38:10.820890"
+            },
+            {
+                "topic": "Payment System in Shakers",
+                "document_id": "payments",
+                "category": "payments",
+                "strength": 1.8,
+                "first_mentioned": "2025-05-01 16:38:10.817503",
+                "last_mentioned": "2025-05-01 16:40:13.284667"
+            },
+            {
+                "topic": "ai",
+                "document_id": "finding_talent",
+                "category": "talent",
+                "strength": 0.7,
+                "first_mentioned": "2025-05-01 16:38:10.818750",
+                "last_mentioned": "2025-05-01 16:38:10.818751"
+            },
+            {
+                "topic": "Top Freelancer Profiles on Shakers",
+                "document_id": "freelancer-profiles",
+                "category": "talent",
+                "strength": 2.7,
+                "first_mentioned": "2025-05-01 16:39:18.194016",
+                "last_mentioned": "2025-05-01 16:39:51.372862"
+            },
+            {
+                "topic": "docker",
+                "document_id": "freelancer-profiles",
+                "category": "talent",
+                "strength": 0.84,
+                "first_mentioned": "2025-05-01 16:39:18.194988",
+                "last_mentioned": "2025-05-01 16:39:51.372898"
+            },
+            {
+                "topic": "skills",
+                "document_id": "skill-assessment-guide",
+                "category": "guides",
+                "strength": 0.7200000000000001,
+                "first_mentioned": "2025-05-01 16:39:18.195697",
+                "last_mentioned": "2025-05-01 16:39:51.372902"
+            },
+            {
+                "topic": "Freelancer Success Guide for Shakers",
+                "document_id": "freelancer-success-guide",
+                "category": "guides",
+                "strength": 1.5,
+                "first_mentioned": "2025-05-01 16:39:51.372867",
+                "last_mentioned": "2025-05-01 16:39:51.373907"
+            },
+            {
+                "topic": "Shakers Platform User Profiles",
+                "document_id": "shakers-user-profiles",
+                "category": "general",
+                "strength": 1.5,
+                "first_mentioned": "2025-05-01 16:39:51.372889",
+                "last_mentioned": "2025-05-01 16:39:51.374606"
+            },
+            {
+                "topic": "Shakers Platform Q&A Dataset",
+                "document_id": "shakers-qa-dataset",
+                "category": "general",
+                "strength": 2.1,
+                "first_mentioned": "2025-05-01 16:40:13.284669",
+                "last_mentioned": "2025-05-01 16:40:13.285753"
+            }
+        ],
+        "last_active": "2025-05-01 16:38:10.812953",
+        "preferences": {},
+        "recent_recommendations": [
+            {
+                "document_id": "shakers-qa-dataset",
+                "title": "Shakers Platform Q&A Dataset",
+                "path": "./app/data/knowledge_base/shakers-qa-dataset.md",
+                "explanation": "Relevant to your current question",
+                "relevance_score": 0.038336399293221385,
+                "category": null,
+                "tags": []
+            },
+            {
+                "document_id": "api-documentation",
+                "title": "Shakers API Documentation",
+                "path": "./app/data/knowledge_base/api-documentation.md",
+                "explanation": "Relevant to your current question",
+                "relevance_score": 0.03207592280274923,
+                "category": null,
+                "tags": [
+                    "api",
+                    "integration",
+                    "development",
+                    "technical"
+                ]
+            },
+            {
+                "document_id": "security-privacy",
+                "title": "Security and Privacy on Shakers",
+                "path": "./app/data/knowledge_base/security-privacy.md",
+                "explanation": "Recommended resource about General",
+                "relevance_score": 0.5,
+                "category": null,
+                "tags": [
+                    "security",
+                    "privacy",
+                    "data protection",
+                    "compliance"
+                ]
+            }
+        ]
+    }
+]

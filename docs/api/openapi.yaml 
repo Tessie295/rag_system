@@ -1,0 +1,802 @@
+openapi: 3.0.3
+info:
+  title: Shakers AI Support System API
+  description: |
+    API for the Shakers AI Support System, providing query processing, 
+    document retrieval, and personalized recommendations.
+  version: 1.0.0
+  contact:
+    name: Shakers Support
+    url: https://shakers.example.com/support
+    email: support@shakers.example.com
+
+servers:
+  - url: http://localhost:8000/api
+    description: Development server
+
+paths:
+  /query:
+    post:
+      summary: Process a user query
+      description: |
+        Process a user query to get an answer with relevant sources and recommendations.
+        The response time target is under 5 seconds.
+      operationId: processQuery
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryRequest'
+      responses:
+        '200':
+          description: Successful query processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryResponse'
+        '400':
+          description: Invalid query request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Service initializing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Query Processing
+
+  /health:
+    get:
+      summary: Check API health status
+      description: Get the current health status and metrics of the API
+      operationId: getHealthStatus
+      responses:
+        '200':
+          description: Health status information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+      tags:
+        - System
+
+  /metrics:
+    get:
+      summary: Get detailed performance metrics
+      description: Retrieve comprehensive performance metrics for the system
+      operationId: getPerformanceMetrics
+      responses:
+        '200':
+          description: Performance metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerformanceMetrics'
+        '503':
+          description: Services still initializing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - System
+
+  /knowledge-base/update:
+    post:
+      summary: Update knowledge base
+      description: Trigger an update of the knowledge base with new documents
+      operationId: updateKnowledgeBase
+      responses:
+        '200':
+          description: Knowledge base updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Knowledge base updated successfully
+        '202':
+          description: Update in progress
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: accepted
+                  message:
+                    type: string
+                    example: Update is in progress
+        '500':
+          description: Failed to update knowledge base
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Knowledge Base
+
+  /documents:
+    get:
+      summary: Get available documents
+      description: Retrieve a list of available documents with optional filtering
+      operationId: getDocuments
+      parameters:
+        - name: category
+          in: query
+          description: Filter by document category
+          required: false
+          schema:
+            type: string
+        - name: tag
+          in: query
+          description: Filter by document tag
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Document'
+        '503':
+          description: Service initializing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Knowledge Base
+
+  /documents/{document_id}/view:
+    post:
+      summary: Mark document as viewed
+      description: Record that a specific user has viewed a document
+      operationId: markDocumentViewed
+      parameters:
+        - name: document_id
+          in: path
+          description: ID of the document being viewed
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: string
+                  description: ID of the user viewing the document
+              required:
+                - user_id
+      responses:
+        '200':
+          description: Document marked as viewed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Document marked as viewed by user
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - User Activity
+
+  /user/{user_id}:
+    get:
+      summary: Get user profile
+      description: Retrieve a user's profile including viewed documents and interests
+      operationId: getUserProfile
+      parameters:
+        - name: user_id
+          in: path
+          description: ID of the user to retrieve
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User profile data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Users
+
+  /evaluate/recommendations:
+    post:
+      summary: Evaluate recommendations
+      description: Evaluate the quality and relevance of recommendations
+      operationId: evaluateRecommendations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                  description: The user query
+                recommendations:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Recommendation'
+                user_history:
+                  type: array
+                  items:
+                    type: string
+                  description: List of previous user queries
+              required:
+                - query
+      responses:
+        '200':
+          description: Evaluation results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Recommendations evaluated successfully
+                  metrics:
+                    type: object
+                    properties:
+                      relevance_score:
+                        type: number
+                        format: float
+                      diversity_score:
+                        type: number
+                        format: float
+                      overall_score:
+                        type: number
+                        format: float
+                      individual_relevance:
+                        type: array
+                        items:
+                          type: number
+                          format: float
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Evaluation
+
+  /reset:
+    post:
+      summary: Reset all data
+      description: Reset all stored data including user profiles, vector database, and metrics
+      operationId: resetData
+      responses:
+        '200':
+          description: Data reset successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: All data reset successfully. Services are reinitializing.
+        '500':
+          description: Reset failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - System
+
+components:
+  schemas:
+    QueryRequest:
+      type: object
+      properties:
+        query:
+          type: string
+          description: The user's question about Shakers
+          example: How do payments work on Shakers?
+        user_id:
+          type: string
+          description: Unique identifier for the user
+          example: user-123
+        context:
+          type: object
+          description: Optional additional context for the query
+          example: {}
+      required:
+        - query
+        - user_id
+
+    QueryResponse:
+      type: object
+      properties:
+        answer:
+          type: string
+          description: The generated response to the user's query
+        sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/Source'
+          description: References to documents used to generate the answer
+        recommendations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Recommendation'
+          description: Personalized document recommendations
+        processing_time:
+          type: number
+          format: float
+          description: Time taken to process the query in seconds
+        evaluation:
+          $ref: '#/components/schemas/QueryEvaluation'
+          description: Quality evaluation of the response (if enabled)
+      required:
+        - answer
+        - sources
+        - recommendations
+        - processing_time
+
+    Source:
+      type: object
+      properties:
+        document_id:
+          type: string
+          description: Identifier for the source document
+        title:
+          type: string
+          description: Title of the source document
+        path:
+          type: string
+          description: Path to the source document
+        relevance_score:
+          type: number
+          format: float
+          description: Score indicating relevance of the source to the query
+          minimum: 0
+          maximum: 1
+        snippet:
+          type: string
+          description: Relevant excerpt from the source document
+      required:
+        - document_id
+        - title
+        - path
+        - relevance_score
+
+    Recommendation:
+      type: object
+      properties:
+        document_id:
+          type: string
+          description: Identifier for the recommended document
+        title:
+          type: string
+          description: Title of the recommended document
+        path:
+          type: string
+          description: Path to the recommended document
+        explanation:
+          type: string
+          description: Explanation of why this document is recommended
+        relevance_score:
+          type: number
+          format: float
+          description: Score indicating relevance of the recommendation
+          minimum: 0
+          maximum: 1
+        tags:
+          type: array
+          items:
+            type: string
+          description: Tags associated with the document
+      required:
+        - document_id
+        - title
+        - path
+        - explanation
+        - relevance_score
+
+    QueryEvaluation:
+      type: object
+      properties:
+        correctness_score:
+          type: number
+          format: float
+          description: Score indicating factual correctness
+          minimum: 0
+          maximum: 1
+        relevance_score:
+          type: number
+          format: float
+          description: Score indicating relevance to the query
+          minimum: 0
+          maximum: 1
+        completeness_score:
+          type: number
+          format: float
+          description: Score indicating answer completeness
+          minimum: 0
+          maximum: 1
+        overall_score:
+          type: number
+          format: float
+          description: Combined quality score
+          minimum: 0
+          maximum: 1
+        feedback:
+          type: string
+          description: Human-readable feedback on the response quality
+      required:
+        - correctness_score
+        - relevance_score
+        - completeness_score
+        - overall_score
+
+    Document:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the document
+        title:
+          type: string
+          description: Title of the document
+        content:
+          type: string
+          description: Full content of the document
+        path:
+          type: string
+          description: File path of the document
+        metadata:
+          type: object
+          description: Additional metadata about the document
+        created_at:
+          type: string
+          format: date-time
+          description: Creation date and time
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update date and time
+        category:
+          type: string
+          description: Document category
+        tags:
+          type: array
+          items:
+            type: string
+          description: Tags associated with the document
+      required:
+        - id
+        - title
+        - path
+
+    ChatMessage:
+      type: object
+      properties:
+        user_message:
+          type: string
+          description: Message from the user
+        assistant_message:
+          type: string
+          description: Response from the assistant
+        timestamp:
+          type: string
+          format: date-time
+          description: When the message exchange occurred
+        feedback:
+          type: string
+          description: User feedback on the response
+        sources_used:
+          type: array
+          items:
+            type: string
+          description: Document IDs of sources used in the response
+      required:
+        - user_message
+        - assistant_message
+        - timestamp
+
+    UserInterest:
+      type: object
+      properties:
+        topic:
+          type: string
+          description: Topic of interest
+        document_id:
+          type: string
+          description: Related document ID
+        category:
+          type: string
+          description: Category of the interest
+        strength:
+          type: number
+          format: float
+          description: Strength of the interest (higher is stronger)
+          minimum: 0
+        first_mentioned:
+          type: string
+          format: date-time
+          description: When the interest was first detected
+        last_mentioned:
+          type: string
+          format: date-time
+          description: When the interest was last mentioned
+      required:
+        - topic
+        - document_id
+        - category
+        - strength
+        - first_mentioned
+        - last_mentioned
+
+    UserProfile:
+      type: object
+      properties:
+        user_id:
+          type: string
+          description: Unique identifier for the user
+        viewed_documents:
+          type: array
+          items:
+            type: string
+          description: List of document IDs the user has viewed
+        chat_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatMessage'
+          description: User's chat history
+        interests:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserInterest'
+          description: User's detected interests
+        last_active:
+          type: string
+          format: date-time
+          description: When the user was last active
+        preferences:
+          type: object
+          description: User preferences
+        recent_recommendations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Recommendation'
+          description: Recently recommended documents
+      required:
+        - user_id
+
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Overall health status
+          example: ok
+        timestamp:
+          type: string
+          format: date-time
+          description: Current server time
+        response_time_target:
+          type: string
+          description: Target response time
+          example: 5.0s
+        rag_status:
+          type: string
+          description: RAG service status
+          enum: [online, initializing, offline]
+        recommendation_status:
+          type: string
+          description: Recommendation service status
+          enum: [online, initializing, offline]
+        search_status:
+          type: string
+          description: Search engine status
+          enum: [online, initializing, offline]
+        metrics:
+          type: object
+          properties:
+            total_queries:
+              type: integer
+              description: Total number of queries processed
+            answered_ratio:
+              type: number
+              format: float
+              description: Ratio of successfully answered queries
+            avg_processing_time:
+              type: number
+              format: float
+              description: Average query processing time in seconds
+            recent_processing_times:
+              type: array
+              items:
+                type: number
+                format: float
+              description: Recent query processing times in seconds
+      required:
+        - status
+        - timestamp
+
+    PerformanceMetrics:
+      type: object
+      properties:
+        rag_metrics:
+          type: object
+          properties:
+            total_queries:
+              type: integer
+              description: Total number of queries processed
+            answered_ratio:
+              type: number
+              format: float
+              description: Ratio of successfully answered queries
+            out_of_scope_ratio:
+              type: number
+              format: float
+              description: Ratio of out-of-scope queries
+            avg_processing_time:
+              type: number
+              format: float
+              description: Average query processing time in seconds
+            avg_relevance_score:
+              type: number
+              format: float
+              description: Average relevance score of sources
+            document_count:
+              type: integer
+              description: Number of documents in the knowledge base
+            last_update:
+              type: string
+              format: date-time
+              description: When the knowledge base was last updated
+            processing_times:
+              type: array
+              items:
+                type: number
+                format: float
+              description: Recent processing times
+        recommendation_metrics:
+          type: object
+          properties:
+            total_recommendations:
+              type: integer
+              description: Total number of recommendations made
+            user_interactions:
+              type: integer
+              description: Number of user interactions with recommendations
+            interaction_rate:
+              type: number
+              format: float
+              description: Ratio of interactions to recommendations
+            avg_diversity:
+              type: number
+              format: float
+              description: Average diversity score of recommendations
+            avg_relevance:
+              type: number
+              format: float
+              description: Average relevance score of recommendations
+            user_count:
+              type: integer
+              description: Number of users tracked by the system
+        user_metrics:
+          type: object
+          properties:
+            total_users:
+              type: integer
+              description: Total number of users in the system
+            active_users_24h:
+              type: integer
+              description: Number of users active in the last 24 hours
+            avg_queries_per_user:
+              type: number
+              format: float
+              description: Average number of queries per user
+            user_satisfaction:
+              type: object
+              additionalProperties:
+                type: array
+                items:
+                  type: number
+                  format: float
+              description: User satisfaction metrics keyed by user ID
+        system_health:
+          type: object
+          properties:
+            uptime:
+              type: string
+              description: System uptime
+            memory_usage:
+              type: string
+              description: Current memory usage
+            documents_loaded:
+              type: integer
+              description: Number of documents loaded
+            last_knowledge_base_update:
+              type: number
+              format: float
+              description: Timestamp of last knowledge base update
+            api_status:
+              type: string
+              description: Overall API status
+              enum: [online, degraded, offline]
+      required:
+        - rag_metrics
+        - recommendation_metrics
+        - user_metrics
+        - system_health
+
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Error message describing what went wrong
+      required:
+        - detail
+
+tags:
+  - name: Query Processing
+    description: Endpoints for processing user queries
+  - name: Knowledge Base
+    description: Endpoints for managing the knowledge base
+  - name: User Activity
+    description: Endpoints for tracking user activity
+  - name: Users
+    description: Endpoints for managing user profiles
+  - name: System
+    description: Endpoints for system management and monitoring
+  - name: Evaluation
+    description: Endpoints for evaluating system performance

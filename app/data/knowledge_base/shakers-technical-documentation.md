@@ -147,7 +147,6 @@ GET /users/{userId}
 POST /users
 PUT /users/{userId}
 DELETE /users/{userId}
-GET /users/search
 ```
 
 #### Projects
@@ -158,7 +157,6 @@ POST /projects
 GET /projects/{projectId}
 PUT /projects/{projectId}
 DELETE /projects/{projectId}
-GET /projects/search
 ```
 
 #### Proposals

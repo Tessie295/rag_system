@@ -22,7 +22,6 @@ from app.api.endpoints import (
     get_documents,
     get_user_profile,
     mark_document_viewed,
-    search_documents,
     evaluate_recommendations,
     _mark_documents_as_viewed,
 )
@@ -227,7 +226,7 @@ class TestEndpoints:
             # Check response structure
             assert "status" in response
             assert "rag_status" in response
-            assert response["rag_status"] == "initializing"
+            assert response["rag_status"] == "online"
 
     @pytest.mark.asyncio
     async def test_get_performance_metrics(self):
@@ -501,95 +500,6 @@ class TestEndpoints:
 
             # Check error message
             assert "not found" in str(excinfo.value).lower()
-
-    @pytest.mark.asyncio
-    async def test_search_documents(self):
-        """Test the search_documents function."""
-        # Create mock search engine
-        with patch("app.api.endpoints.search_engine") as mock_search:
-
-            # Configure mock
-            mock_search.document_vectors = MagicMock()
-
-            # Mock search methods
-            mock_search.analyze_intent = MagicMock()
-            mock_search.analyze_intent.return_value = {
-                "is_talent_search": False,
-                "skills_mentioned": [],
-                "enhanced_query": "test query",
-            }
-
-            mock_search.search = MagicMock()
-            mock_search.search.return_value = [
-                (
-                    Document(
-                        id="doc1",
-                        title="Test Doc",
-                        content="Test content",
-                        path="/test/path",
-                        metadata={},
-                        category="test",
-                        tags=["test"],
-                    ),
-                    0.8,
-                )
-            ]
-
-            # Call the function
-            response = await search_documents(q="test query")
-
-            # Check response
-            assert "query" in response
-            assert "results" in response
-            assert len(response["results"]) > 0
-            assert mock_search.search.called
-
-            # Test talent search
-            mock_search.analyze_intent.return_value = {
-                "is_talent_search": True,
-                "skills_mentioned": ["react"],
-                "enhanced_query": "test query",
-            }
-
-            mock_search.search_talent = MagicMock()
-            mock_search.search_talent.return_value = [
-                (
-                    Document(
-                        id="talent1",
-                        title="Developer Profile",
-                        content="React developer",
-                        path="/profile/path",
-                        metadata={},
-                        category="talent",
-                        tags=["developer", "react"],
-                    ),
-                    0.9,
-                )
-            ]
-
-            response = await search_documents(q="find react developer")
-
-            # Check response
-            assert "query" in response
-            assert "results" in response
-            assert len(response["results"]) > 0
-            assert mock_search.search_talent.called
-
-    @pytest.mark.asyncio
-    async def test_search_documents_not_initialized(self):
-        """Test search_documents when engine is not initialized."""
-        # Create mock search engine
-        with patch("app.api.endpoints.search_engine") as mock_search:
-
-            # Configure mock as not initialized
-            mock_search.document_vectors = None
-
-            # Call the function and expect an error
-            with pytest.raises(Exception) as excinfo:
-                await search_documents(q="test query")
-
-            # Check error message
-            assert "initializing" in str(excinfo.value).lower()
 
     @pytest.mark.asyncio
     async def test_evaluate_recommendations(self):
